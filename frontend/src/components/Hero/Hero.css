@@ -9,6 +9,8 @@
   gap: 70px;
 }
 
+/* LEFT SIDE */
+
 .hero-text {
   flex: 1;
   max-width: 620px;
@@ -39,6 +41,8 @@
   margin-bottom: 40px;
 }
 
+/* BUTTONS */
+
 .hero-buttons {
   display: flex;
   gap: 18px;
@@ -58,7 +62,7 @@
 
 .primary-btn:hover {
   transform: translateY(-4px);
-  box-shadow: 0 15px 35px rgba(37,99,235,.35);
+  box-shadow: 0 15px 35px rgba(37, 99, 235, .35);
 }
 
 .secondary-btn {
@@ -75,6 +79,8 @@
   background: #f1f5f9;
 }
 
+/* RIGHT SIDE */
+
 .hero-image {
   flex: 1;
   display: flex;
@@ -86,19 +92,20 @@
   width: 450px;
   background: white;
   border-radius: 24px;
-  padding: 28px;
-  box-shadow: 0 30px 70px rgba(15,23,42,.12);
+  padding: 32px;
+  box-shadow: 0 30px 70px rgba(15, 23, 42, .12);
 }
 
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
+  margin-bottom: 30px;
 }
 
 .dashboard-header h2 {
-  font-size: 24px;
+  font-size: 26px;
+  color: #0f172a;
 }
 
 .profile {
@@ -106,6 +113,7 @@
   align-items: center;
   gap: 8px;
   color: #64748b;
+  font-size: 14px;
 }
 
 .online {
@@ -115,60 +123,68 @@
   border-radius: 50%;
 }
 
-.dashboard-card {
+/* LOGIN FORM */
+
+.login-input {
+  width: 100%;
+  padding: 15px 18px;
+  margin-bottom: 18px;
+  border: 1px solid #dbe4ee;
+  border-radius: 12px;
+  font-size: 15px;
   background: #f8fafc;
-  padding: 18px;
-  border-radius: 16px;
-  margin-bottom: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  outline: none;
+  transition: .3s;
+  box-sizing: border-box;
+}
+
+.login-input:focus {
+  border-color: #2563eb;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, .12);
+}
+
+.login-btn {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  background: #2563eb;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
   transition: .3s;
 }
 
-.dashboard-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 25px rgba(15,23,42,.08);
+.login-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
 }
 
-.dashboard-card h3 {
-  margin-bottom: 6px;
-}
-
-.dashboard-card p {
-  color: #64748b;
-  font-size: 14px;
-}
-
-.badge {
-  padding: 6px 12px;
-  border-radius: 30px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.green {
-  background: #dcfce7;
-  color: #16a34a;
-}
-
-.blue {
-  background: #dbeafe;
+.signup-btn {
+  width: 100%;
+  margin-top: 15px;
+  padding: 15px;
+  border: 2px solid #2563eb;
+  border-radius: 12px;
+  background: white;
   color: #2563eb;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .3s;
 }
 
-.orange {
-  background: #ffedd5;
-  color: #ea580c;
+.signup-btn:hover {
+  background: #2563eb;
+  color: white;
 }
 
-.purple {
-  background: #ede9fe;
-  color: #7c3aed;
-}
+/* PROGRESS */
 
 .progress-section {
-  margin-top: 25px;
+  margin-top: 28px;
 }
 
 .progress-title {
@@ -176,6 +192,7 @@
   justify-content: space-between;
   margin-bottom: 10px;
   font-weight: 600;
+  color: #334155;
 }
 
 .progress-bar {
@@ -186,24 +203,33 @@
 }
 
 .progress-fill {
-  width: 78%;
+  width: 100%;
   height: 100%;
-  background: #2563eb;
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
   border-radius: 50px;
 }
 
+/* FLOATING CARDS */
+
 .floating-card {
   position: absolute;
-  background: white;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
   border-radius: 18px;
   padding: 18px 22px;
-  box-shadow: 0 15px 40px rgba(15,23,42,.12);
+  box-shadow: 0 15px 40px rgba(15, 23, 42, .12);
   text-align: center;
+  transition: .3s;
+}
+
+.floating-card:hover {
+  transform: translateY(-8px);
 }
 
 .floating-card h3 {
   color: #2563eb;
   font-size: 24px;
+  margin-bottom: 5px;
 }
 
 .floating-card p {
@@ -226,29 +252,31 @@
   left: 40px;
 }
 
-@media(max-width:992px){
+/* RESPONSIVE */
 
-.hero{
-flex-direction:column;
-text-align:center;
-padding:60px 6%;
-}
+@media (max-width: 992px) {
 
-.hero-buttons{
-justify-content:center;
-}
+  .hero {
+    flex-direction: column;
+    text-align: center;
+    padding: 60px 6%;
+  }
 
-.hero-text h1{
-font-size:52px;
-}
+  .hero-text h1 {
+    font-size: 52px;
+  }
 
-.dashboard{
-width:100%;
-max-width:450px;
-}
+  .hero-buttons {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
 
-.floating-card{
-display:none;
-}
+  .dashboard {
+    width: 100%;
+    max-width: 450px;
+  }
 
+  .floating-card {
+    display: none;
+  }
 }

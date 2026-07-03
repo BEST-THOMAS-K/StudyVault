@@ -21,8 +21,8 @@ function Hero() {
         <p className="description">
           StudyVault is your all-in-one academic platform designed for students.
           Access quality notes, previous year question papers, AI-powered
-          summaries, and collaborate with classmates—all from one modern
-          workspace.
+          summaries, collaborate with classmates, and organize your academic
+          journey from one modern workspace.
         </p>
 
         <div className="hero-buttons">
@@ -54,7 +54,7 @@ function Hero() {
             </div>
           </div>
 
-          {/* Card 1 */}
+          {/* Notes */}
           <div
             className="dashboard-card"
             onClick={() => navigate("/notes")}
@@ -68,7 +68,7 @@ function Hero() {
             <span className="badge green">Open</span>
           </div>
 
-          {/* Card 2 */}
+          {/* AI */}
           <div
             className="dashboard-card"
             onClick={() => navigate("/ai")}
@@ -82,21 +82,21 @@ function Hero() {
             <span className="badge blue">Launch</span>
           </div>
 
-          {/* Card 3 */}
+          {/* PYQs */}
           <div
             className="dashboard-card"
             onClick={() => navigate("/pyqs")}
             style={{ cursor: "pointer" }}
           >
             <div>
-              <h3>📄 PYQs</h3>
-              <p>1200+ Previous Year Papers</p>
+              <h3>📄 Previous Year Papers</h3>
+              <p>1200+ Solved Question Papers</p>
             </div>
 
             <span className="badge orange">Browse</span>
           </div>
 
-          {/* Card 4 */}
+          {/* Team */}
           <div
             className="dashboard-card"
             onClick={() => navigate("/team")}

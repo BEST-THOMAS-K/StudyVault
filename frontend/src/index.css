@@ -31,3 +31,69 @@ img {
   max-width: 100%;
   display: block;
 }
+body{
+    margin:0;
+    transition:0.4s;
+    background:#fcfcfd;
+    color:#0f172a;
+}
+
+body.dark-theme{
+    background:#0f172a;
+    color:white;
+}
+
+/* Hero */
+
+body.dark-theme .hero{
+    background:#0f172a;
+}
+
+body.dark-theme .hero h1,
+body.dark-theme .hero h2,
+body.dark-theme .hero h3{
+    color:white;
+}
+
+body.dark-theme .description,
+body.dark-theme p,
+body.dark-theme small{
+    color:#cbd5e1;
+}
+
+body.dark-theme .dashboard{
+    background:#1e293b;
+}
+
+body.dark-theme .dashboard-card{
+    background:#334155;
+}
+
+body.dark-theme .floating-card{
+    background:#1e293b;
+}
+
+body.dark-theme .secondary-btn{
+    background:#1e293b;
+    color:white;
+    border:1px solid #475569;
+}
+
+body.dark-theme .note-card{
+    background:#1e293b;
+    color:white;
+}
+
+body.dark-theme input{
+    background:#334155;
+    color:white;
+    border:1px solid #475569;
+}
+
+body.dark-theme .login-card{
+    background:#1e293b;
+}
+
+body.dark-theme .navbar{
+    background:#111827;
+}

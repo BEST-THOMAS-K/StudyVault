@@ -1,3 +1,4 @@
+import ThemeToggle from "../ThemeToggle/ThemeToggle";
 import { Link } from "react-router-dom";
 import "./Navbar.css";
 
@@ -6,11 +7,10 @@ function Navbar() {
     <nav className="navbar">
 
       <div className="logo">
-        StudyVault
+        <Link to="/">StudyVault</Link>
       </div>
 
       <ul className="nav-links">
-
         <li>
           <Link to="/">Home</Link>
         </li>
@@ -30,9 +30,12 @@ function Navbar() {
         <li>
           <Link to="/contact">Contact</Link>
         </li>
-
       </ul>
 
+      {/* Theme Toggle */}
+      <ThemeToggle />
+
+      {/* Get Started Button */}
       <Link to="/login" className="cta-btn">
         Get Started
       </Link>
