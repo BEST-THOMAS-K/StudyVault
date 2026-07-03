@@ -1,23 +1,42 @@
+import { Link } from "react-router-dom";
 import "./Navbar.css";
 
 function Navbar() {
   return (
     <nav className="navbar">
+
       <div className="logo">
-        Study<span>Vault</span>
+        StudyVault
       </div>
 
       <ul className="nav-links">
-        <li><a href="#">Home</a></li>
-        <li><a href="#">Features</a></li>
-        <li><a href="#">Resources</a></li>
-        <li><a href="#">About</a></li>
+
+        <li>
+          <Link to="/">Home</Link>
+        </li>
+
+        <li>
+          <Link to="/notes">Notes</Link>
+        </li>
+
+        <li>
+          <Link to="/ai">AI Assistant</Link>
+        </li>
+
+        <li>
+          <Link to="/pyqs">PYQs</Link>
+        </li>
+
+        <li>
+          <Link to="/contact">Contact</Link>
+        </li>
+
       </ul>
 
-      <div className="nav-buttons">
-        <button className="login">Login</button>
-        <button className="cta">Get Started</button>
-      </div>
+      <Link to="/login" className="cta-btn">
+        Get Started
+      </Link>
+
     </nav>
   );
 }

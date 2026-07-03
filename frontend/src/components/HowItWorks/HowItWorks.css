@@ -1,0 +1,21 @@
+.how{
+    padding:90px 8%;
+    background:#f8fafc;
+    text-align:center;
+}
+
+.steps{
+    display:flex;
+    justify-content:center;
+    gap:40px;
+    flex-wrap:wrap;
+    margin-top:40px;
+}
+
+.steps div{
+    width:220px;
+    background:white;
+    padding:30px;
+    border-radius:18px;
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
