@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationContext";
 import "./Notes.css";
 
 // File Preview Modal Component
@@ -51,129 +53,193 @@ const FilePreviewModal = ({ file, onClose }) => {
 };
 
 function Notes() {
-  // Load data from localStorage on initial render
-  const loadFromStorage = (key, defaultValue) => {
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (error) {
-      console.error('Error loading from localStorage:', error);
-    }
-    return defaultValue;
-  };
-
+  const { authFetch, accessToken, user } = useAuth();
+  const { addNotification } = useNotifications();
+  
+  // --- STATE ---
+  const [subjects, setSubjects] = useState([]);
   const [notes, setNotes] = useState([]);
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [newSubject, setNewSubject] = useState("");
-  const [subjects, setSubjects] = useState(() => loadFromStorage('subjects', []));
   const [selectedSubject, setSelectedSubject] = useState("");
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [showReviewAll, setShowReviewAll] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState(() => {
-    const stored = loadFromStorage('uploadedFiles', []);
-    // We need to handle File objects specially since they can't be stored in localStorage
-    // For files, we'll store metadata and recreate file objects
-    return stored.map(file => ({
-      ...file,
-      // File objects are not stored, we need to handle this
-      // For actual file data, we'd need to use IndexedDB or a different approach
-      // For now, we'll keep the metadata
-    }));
-  });
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const [previewFile, setPreviewFile] = useState(null);
   const [selectedSubjectForView, setSelectedSubjectForView] = useState(null);
   const [showSubjectFiles, setShowSubjectFiles] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [activeNavItem, setActiveNavItem] = useState(() => loadFromStorage('activeNavItem', 'home'));
+  const [activeNavItem, setActiveNavItem] = useState('home');
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Save to localStorage whenever data changes
-  useEffect(() => {
-    try {
-      // Store subjects
-      localStorage.setItem('subjects', JSON.stringify(subjects));
-      
-      // Store uploaded files metadata (without actual File objects)
-      const filesToStore = uploadedFiles.map(file => {
-        // Remove the actual File object from storage
-        const { file: fileObj, ...fileData } = file;
-        return fileData;
-      });
-      localStorage.setItem('uploadedFiles', JSON.stringify(filesToStore));
-      
-      // Store active nav item
-      localStorage.setItem('activeNavItem', JSON.stringify(activeNavItem));
-    } catch (error) {
-      console.error('Error saving to localStorage:', error);
-    }
-  }, [subjects, uploadedFiles, activeNavItem]);
+  const API_BASE = "http://127.0.0.1:8000/api/notes";
 
-  // Restore file objects from stored data (for uploaded files)
-  const restoreFiles = () => {
-    const stored = loadFromStorage('uploadedFiles', []);
-    // Since we can't store actual File objects, we'll keep them as metadata
-    // The actual file data would need a different storage solution
-    setUploadedFiles(stored);
+  // --- FETCH SUBJECTS FROM DJANGO WITH AUTH ---
+  const fetchSubjects = async () => {
+    try {
+      const response = await authFetch(`${API_BASE}/subjects/`);
+      const data = await response.json();
+      setSubjects(data);
+    } catch (error) {
+      console.error("Error fetching subjects:", error);
+    }
   };
 
-  // Call restore on mount
+  // --- FETCH NOTES FROM DJANGO WITH AUTH ---
+  const fetchNotes = async () => {
+    try {
+      const response = await authFetch(`${API_BASE}/notes/`);
+      const data = await response.json();
+      setNotes(data);
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+    }
+  };
+
+  // --- LOAD DATA ON MOUNT ---
   useEffect(() => {
-    restoreFiles();
+    fetchSubjects();
+    fetchNotes();
   }, []);
 
-  const handlePreview = (file) => {
-    setPreviewFile(file);
-  };
+  // --- ADD SUBJECT WITH AUTH ---
+  const handleAddSubject = async () => {
+    if (!newSubject.trim()) return;
 
-  const handleDownload = (title) => {
-    alert(`Downloading "${title}"`);
-  };
+    try {
+      const response = await authFetch(`${API_BASE}/subjects/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newSubject.trim() }),
+      });
 
-  const handleAddSubject = () => {
-    if (newSubject.trim()) {
-      const updatedSubjects = [...subjects, newSubject.trim()];
-      setSubjects(updatedSubjects);
-      setNewSubject("");
-      setShowAddSubject(false);
+      if (response.ok) {
+        setNewSubject("");
+        setShowAddSubject(false);
+        fetchSubjects();
+        
+        // Add notification for new subject
+        addNotification(
+          "StudyVault",
+          `New subject created: ${newSubject.trim()}`,
+          "subject",
+          new Date().toISOString()
+        );
+      } else {
+        alert("Failed to add subject");
+      }
+    } catch (error) {
+      console.error("Error adding subject:", error);
     }
   };
 
-  const handleFileUpload = (event, subject) => {
+  // --- UPLOAD NOTE TO DJANGO WITH AUTH ---
+  const handleFileUpload = async (event, subjectName) => {
     const files = Array.from(event.target.files);
-    const now = new Date();
-    const timeString = now.toLocaleTimeString();
-    const dateString = now.toLocaleDateString();
+    if (files.length === 0) return;
+
+    setUploading(true);
+
+    const subjectObj = subjects.find(s => s.name === subjectName);
+    if (!subjectObj) {
+      alert(`Subject "${subjectName}" not found. Please add it first.`);
+      setUploading(false);
+      return;
+    }
+
+    const subjectId = subjectObj.id;
+
+    let successCount = 0;
+    for (const file of files) {
+      const formData = new FormData();
+      const title = file.name.replace(/\.[^/.]+$/, "");
+      formData.append("title", title);
+      formData.append("subject", subjectId);
+      formData.append("file", file);
+
+      try {
+        // Use fetch with token for FormData
+        const response = await fetch(`${API_BASE}/notes/`, {
+          method: "POST",
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: formData,
+        });
+
+        if (response.ok) {
+          successCount++;
+          
+          // --- ADD NOTIFICATION FOR EACH SUCCESSFUL UPLOAD ---
+          console.log('📢 Creating notification for:', {
+            subject: subjectName,
+            title: title,
+            file: file.name,
+          });
+          
+          addNotification(
+            subjectName, 
+            title, 
+            file.name, 
+            new Date().toISOString()
+          );
+          
+          console.log('✅ Notification added successfully!');
+          // --- END OF NOTIFICATION ---
+
+          const now = new Date();
+          setUploadedFiles(prev => [{
+            id: Date.now() + Math.random(),
+            name: file.name,
+            type: file.type.startsWith("image/") ? "image" : "pdf",
+            subject: subjectName,
+            uploadedBy: user?.username || "Current User",
+            size: (file.size / 1024).toFixed(2),
+            file: file,
+            uploadDate: now.toLocaleDateString(),
+            uploadTime: now.toLocaleTimeString(),
+            fileSize: file.size,
+          }, ...prev]);
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+      }
+    }
+
+    setUploading(false);
+    fetchNotes();
     
-    const newFiles = files.map((file) => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      type: file.type.startsWith("image/") ? "image" : "pdf",
-      subject: subject || "Uncategorized",
-      uploadedBy: "Current User",
-      size: (file.size / 1024).toFixed(2),
-      file: file, // Keep the actual file object for preview
-      uploadDate: dateString,
-      uploadTime: timeString,
-      fileSize: file.size,
-    }));
-    
-    const updatedFiles = [...newFiles, ...uploadedFiles];
-    setUploadedFiles(updatedFiles);
-    
-    // Store only metadata without File objects
-    const filesToStore = updatedFiles.map(f => {
-      const { file: fileObj, ...fileData } = f;
-      return fileData;
-    });
-    localStorage.setItem('uploadedFiles', JSON.stringify(filesToStore));
-    
-    alert(`${files.length} file(s) uploaded successfully to "${subject}"!`);
+    if (successCount > 0) {
+      alert(`${successCount} of ${files.length} file(s) uploaded successfully!`);
+    } else {
+      alert("Upload failed. Please try again.");
+    }
   };
 
+  // --- DELETE NOTE WITH AUTH ---
+  const handleDeleteNote = async (noteId) => {
+    if (!window.confirm("Are you sure you want to delete this note?")) return;
+
+    try {
+      const response = await authFetch(`${API_BASE}/notes/${noteId}/`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        fetchNotes();
+        alert("Note deleted successfully");
+      } else {
+        alert("Failed to delete note");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+    }
+  };
+
+  // --- UPLOAD HANDLERS ---
   const handleGalleryUpload = () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -198,69 +264,25 @@ function Notes() {
     input.click();
   };
 
-  const getFilesByType = (type) => {
-    return uploadedFiles.filter((file) => file.type === type);
+  // --- FILTER FUNCTIONS ---
+  const getNotesBySubject = (subjectName) => {
+    return notes.filter(note => note.subject_name === subjectName);
   };
 
-  const getFilesBySubject = (subject) => {
-    return uploadedFiles.filter((file) => file.subject === subject);
+  const getNotesByType = (type) => {
+    return notes.filter(note => {
+      const fileExt = note.file?.split('.').pop()?.toLowerCase();
+      if (type === "image") {
+        return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(fileExt);
+      }
+      if (type === "pdf") {
+        return fileExt === 'pdf';
+      }
+      return false;
+    });
   };
 
-  const handleSubjectClick = (subject) => {
-    setSelectedSubjectForView(subject);
-    setShowSubjectFiles(true);
-    setShowReviewAll(false);
-    setShowSearchResults(false);
-    setActiveNavItem("subjects");
-  };
-
-  const handleCloseSubjectView = () => {
-    setShowSubjectFiles(false);
-    setSelectedSubjectForView(null);
-  };
-
-  const handleSearch = () => {
-    if (!searchTerm.trim()) {
-      setShowSearchResults(false);
-      return;
-    }
-
-    const term = searchTerm.toLowerCase().trim();
-    
-    // Search by subject
-    const subjectResults = uploadedFiles.filter(file => 
-      file.subject.toLowerCase().includes(term)
-    );
-
-    // Search by file name
-    const fileResults = uploadedFiles.filter(file => 
-      file.name.toLowerCase().includes(term)
-    );
-
-    // Combine results (remove duplicates)
-    const combined = [...subjectResults, ...fileResults];
-    const uniqueResults = combined.filter((file, index, self) => 
-      index === self.findIndex(f => f.id === file.id)
-    );
-
-    if (uniqueResults.length > 0) {
-      setSearchResults(uniqueResults);
-      setShowSearchResults(true);
-      setShowReviewAll(false);
-      setShowSubjectFiles(false);
-      setActiveNavItem("search");
-    } else {
-      alert(`No files found for "${searchTerm}"`);
-      setShowSearchResults(false);
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
-  };
-
+  // --- NAVIGATION ---
   const handleNavClick = (item) => {
     setActiveNavItem(item);
     if (item === "review") {
@@ -291,25 +313,58 @@ function Notes() {
     }
   };
 
-  const getFileIcon = (type) => {
-    return type === "image" ? "🖼️" : "📄";
-  };
+  // --- SEARCH ---
+  const handleSearch = () => {
+    if (!searchTerm.trim()) {
+      setShowSearchResults(false);
+      return;
+    }
 
-  const formatFileSize = (size) => {
-    if (size < 1024) {
-      return size + " B";
-    } else if (size < 1024 * 1024) {
-      return (size / 1024).toFixed(2) + " KB";
-    } else {
-      return (size / (1024 * 1024)).toFixed(2) + " MB";
+    const term = searchTerm.toLowerCase().trim();
+    const results = notes.filter(note =>
+      note.title?.toLowerCase().includes(term) ||
+      note.subject_name?.toLowerCase().includes(term)
+    );
+
+    setSearchResults(results);
+    setShowSearchResults(results.length > 0);
+    if (results.length === 0) {
+      alert(`No files found for "${searchTerm}"`);
     }
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
+  const handleSubjectClick = (subject) => {
+    setSelectedSubjectForView(subject);
+    setShowSubjectFiles(true);
+    setShowReviewAll(false);
+    setShowSearchResults(false);
+    setActiveNavItem("subjects");
+  };
+
+  const handleCloseSubjectView = () => {
+    setShowSubjectFiles(false);
+    setSelectedSubjectForView(null);
+  };
+
+  const getFileIcon = (type) => type === "image" ? "🖼️" : "📄";
+
+  const formatFileSize = (size) => {
+    if (size < 1024) return size + " B";
+    if (size < 1024 * 1024) return (size / 1024).toFixed(2) + " KB";
+    return (size / (1024 * 1024)).toFixed(2) + " MB";
+  };
+
+  // --- RENDER ---
   return (
     <div className="notes-page">
       <div className="notes-header">
         <h1>Study Notes</h1>
         <p>Browse, preview and download quality notes.</p>
+        {user && <p className="welcome-user">👋 Welcome, {user.username}!</p>}
       </div>
 
       {/* Navigation Bar */}
@@ -325,7 +380,7 @@ function Notes() {
             className={`nav-item ${activeNavItem === "review" ? "active" : ""}`}
             onClick={() => handleNavClick("review")}
           >
-            📖 Review All Notes
+            📖 Review All Notes ({notes.length})
           </button>
           <button 
             className={`nav-item ${activeNavItem === "upload" ? "active" : ""}`}
@@ -362,26 +417,26 @@ function Notes() {
         <div className="subjects-list">
           <h3>📚 Subjects</h3>
           <div className="subjects-container">
-            {subjects.map((subject, index) => {
-              const fileCount = getFilesBySubject(subject).length;
+            {subjects.map((subject) => {
+              const fileCount = getNotesBySubject(subject.name).length;
               return (
                 <div 
-                  key={index} 
+                  key={subject.id} 
                   className="subject-tag clickable"
-                  onClick={() => handleSubjectClick(subject)}
+                  onClick={() => handleSubjectClick(subject.name)}
                 >
-                  <span className="subject-name">{subject}</span>
-                  <span className="file-count">({fileCount} files)</span>
+                  <span className="subject-name">{subject.name}</span>
+                  <span className="file-count">({fileCount} notes)</span>
                   <button
                     className="subject-upload-btn"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedSubject(subject);
+                      setSelectedSubject(subject.name);
                       const input = document.createElement("input");
                       input.type = "file";
                       input.accept = ".pdf,image/*";
                       input.multiple = true;
-                      input.onchange = (e) => handleFileUpload(e, subject);
+                      input.onchange = (e) => handleFileUpload(e, subject.name);
                       input.click();
                     }}
                   >
@@ -412,6 +467,7 @@ function Notes() {
               Cancel
             </button>
           </div>
+          {uploading && <p>⏳ Uploading... Please wait.</p>}
         </div>
       )}
 
@@ -446,29 +502,34 @@ function Notes() {
             <span className="result-count">{searchResults.length} file(s) found</span>
           </div>
           <div className="recent-uploads-list">
-            {searchResults.map((file) => (
-              <div key={file.id} className="recent-file-item">
+            {searchResults.map((note) => (
+              <div key={note.id} className="recent-file-item">
                 <div className="file-icon-large">
-                  {file.type === "image" ? "🖼️" : "📄"}
+                  {getFileIcon(note.file?.split('.').pop())}
                 </div>
                 <div className="file-details">
                   <div className="file-title">
-                    <span className="file-name">{file.name}</span>
-                    <span className="file-subject-badge">{file.subject}</span>
+                    <span className="file-name">{note.title}</span>
+                    <span className="file-subject-badge">{note.subject_name}</span>
                   </div>
                   <div className="file-meta-info">
-                    <span className="file-size">📊 {formatFileSize(file.fileSize)}</span>
-                    <span className="file-time">🕐 {file.uploadTime}</span>
-                    <span className="file-date">📅 {file.uploadDate}</span>
-                    <span className="file-uploader">👤 {file.uploadedBy}</span>
+                    <span className="file-date">📅 {new Date(note.uploaded_at).toLocaleDateString()}</span>
                   </div>
                 </div>
                 <div className="file-actions">
-                  <button
+                  <a
+                    href={`http://127.0.0.1:8000${note.file}`}
+                    target="_blank"
+                    rel="noreferrer"
                     className="preview-btn-small"
-                    onClick={() => handlePreview(file)}
                   >
-                    👁️ Preview
+                    👁️ View
+                  </a>
+                  <button
+                    className="delete-btn-small"
+                    onClick={() => handleDeleteNote(note.id)}
+                  >
+                    🗑️
                   </button>
                 </div>
               </div>
@@ -481,93 +542,48 @@ function Notes() {
       {showSubjectFiles && selectedSubjectForView && (
         <div className="review-all-section">
           <div className="review-header">
-            <h2>📚 {selectedSubjectForView} - Uploaded Files</h2>
-            <button
-              className="close-review-btn"
-              onClick={handleCloseSubjectView}
-            >
+            <h2>📚 {selectedSubjectForView} - Uploaded Notes</h2>
+            <button className="close-review-btn" onClick={handleCloseSubjectView}>
               ✕
             </button>
           </div>
 
-          {getFilesBySubject(selectedSubjectForView).length === 0 ? (
+          {getNotesBySubject(selectedSubjectForView).length === 0 ? (
             <div className="no-notes-message">
-              <p>No files uploaded for {selectedSubjectForView} yet.</p>
-              <p>Click the 📤 button on the subject to upload files.</p>
+              <p>No notes uploaded for {selectedSubjectForView} yet.</p>
+              <p>Click the 📤 button on the subject to upload notes.</p>
             </div>
           ) : (
-            <>
-              {/* PDF Files for this subject */}
-              {getFilesBySubject(selectedSubjectForView).filter(f => f.type === "pdf").length > 0 && (
-                <div className="review-category">
-                  <h3>📄 PDF Files</h3>
-                  <div className="review-grid">
-                    {getFilesBySubject(selectedSubjectForView)
-                      .filter(f => f.type === "pdf")
-                      .map((file) => (
-                        <div key={file.id} className="review-item">
-                          <div className="file-icon">📄</div>
-                          <div className="file-info">
-                            <p className="file-name">{file.name}</p>
-                            <p className="file-meta">
-                              Size: {file.size} KB
-                            </p>
-                            <p className="file-meta">
-                              Uploaded by: {file.uploadedBy} | {file.uploadDate}
-                            </p>
-                          </div>
-                          <button
-                            className="preview-btn"
-                            onClick={() => handlePreview(file)}
-                          >
-                            Preview
-                          </button>
-                        </div>
-                      ))}
+            <div className="review-grid">
+              {getNotesBySubject(selectedSubjectForView).map((note) => (
+                <div key={note.id} className="review-item">
+                  <div className="file-icon">📄</div>
+                  <div className="file-info">
+                    <p className="file-name">{note.title}</p>
+                    <p className="file-meta">Subject: {note.subject_name}</p>
+                    <p className="file-meta">
+                      Uploaded: {new Date(note.uploaded_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="file-actions">
+                    <a
+                      href={`http://127.0.0.1:8000${note.file}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="preview-btn"
+                    >
+                      👁️ View
+                    </a>
+                    <button
+                      className="delete-btn"
+                      onClick={() => handleDeleteNote(note.id)}
+                    >
+                      🗑️ Delete
+                    </button>
                   </div>
                 </div>
-              )}
-
-              {/* Images for this subject */}
-              {getFilesBySubject(selectedSubjectForView).filter(f => f.type === "image").length > 0 && (
-                <div className="review-category">
-                  <h3>🖼️ Images</h3>
-                  <div className="review-grid images-grid">
-                    {getFilesBySubject(selectedSubjectForView)
-                      .filter(f => f.type === "image")
-                      .map((file) => (
-                        <div key={file.id} className="review-item image-item">
-                          <div className="image-preview">
-                            {file.file ? (
-                              <img
-                                src={URL.createObjectURL(file.file)}
-                                alt={file.name}
-                              />
-                            ) : (
-                              <div className="placeholder-image">No preview available</div>
-                            )}
-                          </div>
-                          <div className="file-info">
-                            <p className="file-name">{file.name}</p>
-                            <p className="file-meta">
-                              Size: {file.size} KB
-                            </p>
-                            <p className="file-meta">
-                              Uploaded by: {file.uploadedBy} | {file.uploadDate}
-                            </p>
-                          </div>
-                          <button
-                            className="preview-btn"
-                            onClick={() => handlePreview(file)}
-                          >
-                            Preview
-                          </button>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </>
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -576,7 +592,7 @@ function Notes() {
       {showReviewAll && !showSubjectFiles && !showSearchResults && (
         <div className="review-all-section">
           <div className="review-header">
-            <h2>📚 All Notes</h2>
+            <h2>📚 All Notes ({notes.length})</h2>
             <button
               className="close-review-btn"
               onClick={() => {
@@ -588,121 +604,88 @@ function Notes() {
             </button>
           </div>
 
-          {/* PDF Notes */}
-          {getFilesByType("pdf").length > 0 && (
-            <div className="review-category">
-              <h3>📄 PDF Notes</h3>
-              <div className="review-grid">
-                {getFilesByType("pdf").map((file) => (
-                  <div key={file.id} className="review-item">
-                    <div className="file-icon">📄</div>
-                    <div className="file-info">
-                      <p className="file-name">{file.name}</p>
-                      <p className="file-meta">
-                        Subject: {file.subject} | Size: {file.size} KB
-                      </p>
-                      <p className="file-meta">
-                        Uploaded by: {file.uploadedBy} | {file.uploadDate}
-                      </p>
-                    </div>
-                    <button
-                      className="preview-btn"
-                      onClick={() => handlePreview(file)}
-                    >
-                      Preview
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Image Notes */}
-          {getFilesByType("image").length > 0 && (
-            <div className="review-category">
-              <h3>🖼️ Images</h3>
-              <div className="review-grid images-grid">
-                {getFilesByType("image").map((file) => (
-                  <div key={file.id} className="review-item image-item">
-                    <div className="image-preview">
-                      {file.file ? (
-                        <img
-                          src={URL.createObjectURL(file.file)}
-                          alt={file.name}
-                        />
-                      ) : (
-                        <div className="placeholder-image">No preview available</div>
-                      )}
-                    </div>
-                    <div className="file-info">
-                      <p className="file-name">{file.name}</p>
-                      <p className="file-meta">
-                        Subject: {file.subject} | Size: {file.size} KB
-                      </p>
-                      <p className="file-meta">
-                        Uploaded by: {file.uploadedBy} | {file.uploadDate}
-                      </p>
-                    </div>
-                    <button
-                      className="preview-btn"
-                      onClick={() => handlePreview(file)}
-                    >
-                      Preview
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {uploadedFiles.length === 0 && (
+          {notes.length === 0 ? (
             <div className="no-notes-message">
-              <p>No uploaded notes found. Start uploading your notes!</p>
+              <p>No notes uploaded yet. Start uploading your notes!</p>
+            </div>
+          ) : (
+            <div className="review-grid">
+              {notes.map((note) => (
+                <div key={note.id} className="review-item">
+                  <div className="file-icon">📄</div>
+                  <div className="file-info">
+                    <p className="file-name">{note.title}</p>
+                    <p className="file-meta">Subject: {note.subject_name}</p>
+                    <p className="file-meta">
+                      Uploaded: {new Date(note.uploaded_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="file-actions">
+                    <a
+                      href={`http://127.0.0.1:8000${note.file}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="preview-btn"
+                    >
+                      👁️ View
+                    </a>
+                    <button
+                      className="delete-btn"
+                      onClick={() => handleDeleteNote(note.id)}
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
       )}
 
       {/* Recent Uploads - Home View */}
-      {!showReviewAll && !showSubjectFiles && !showSearchResults && uploadedFiles.length > 0 && (
+      {!showReviewAll && !showSubjectFiles && !showSearchResults && notes.length > 0 && (
         <div className="recent-uploads">
           <div className="recent-uploads-header">
             <h3>📂 Recent Uploads</h3>
-            <span className="upload-count">{uploadedFiles.length} files</span>
+            <span className="upload-count">{notes.length} notes</span>
           </div>
           <div className="recent-uploads-list">
-            {uploadedFiles.slice(0, 10).map((file) => (
-              <div key={file.id} className="recent-file-item">
-                <div className="file-icon-large">
-                  {file.type === "image" ? "🖼️" : "📄"}
-                </div>
+            {notes.slice(0, 10).map((note) => (
+              <div key={note.id} className="recent-file-item">
+                <div className="file-icon-large">📄</div>
                 <div className="file-details">
                   <div className="file-title">
-                    <span className="file-name">{file.name}</span>
-                    <span className="file-subject-badge">{file.subject}</span>
+                    <span className="file-name">{note.title}</span>
+                    <span className="file-subject-badge">{note.subject_name}</span>
                   </div>
                   <div className="file-meta-info">
-                    <span className="file-size">📊 {formatFileSize(file.fileSize)}</span>
-                    <span className="file-time">🕐 {file.uploadTime}</span>
-                    <span className="file-date">📅 {file.uploadDate}</span>
-                    <span className="file-uploader">👤 {file.uploadedBy}</span>
+                    <span className="file-date">📅 {new Date(note.uploaded_at).toLocaleString()}</span>
                   </div>
                 </div>
                 <div className="file-actions">
-                  <button
+                  <a
+                    href={`http://127.0.0.1:8000${note.file}`}
+                    target="_blank"
+                    rel="noreferrer"
                     className="preview-btn-small"
-                    onClick={() => handlePreview(file)}
                   >
-                    👁️ Preview
+                    👁️ View
+                  </a>
+                  <button
+                    className="delete-btn-small"
+                    onClick={() => handleDeleteNote(note.id)}
+                  >
+                    🗑️
                   </button>
                 </div>
               </div>
             ))}
           </div>
-          {uploadedFiles.length > 10 && (
+          {notes.length > 10 && (
             <div className="view-more">
               <button onClick={() => handleNavClick("review")}>
-                View all {uploadedFiles.length} files →
+                View all {notes.length} notes →
               </button>
             </div>
           )}
@@ -710,7 +693,7 @@ function Notes() {
       )}
 
       {/* Empty State */}
-      {!showReviewAll && !showSubjectFiles && !showSearchResults && uploadedFiles.length === 0 && (
+      {!showReviewAll && !showSubjectFiles && !showSearchResults && notes.length === 0 && (
         <div className="empty-state">
           <div className="empty-state-content">
             <span className="empty-icon">📚</span>
