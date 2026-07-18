@@ -1,99 +1,124 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* ====== Global Reset & Variables ====== */
+:root {
+  /* Light Mode */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-glass: rgba(255, 255, 255, 0.5);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-light: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.06);
+  --border-light: rgba(255, 255, 255, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.08);
+  --gradient-primary: linear-gradient(135deg, #06b6d4, #3b82f6, #8b5cf6);
+  --gradient-hero: linear-gradient(135deg, #0c4a6e, #1e3a5f, #1e1b4b);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-html,
-body,
-#root {
-  width: 100%;
-  min-height: 100%;
+/* ====== Dark Mode (System Preference) ====== */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: rgba(30, 41, 59, 0.8);
+    --bg-glass: rgba(30, 41, 59, 0.6);
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-muted: #64748b;
+    --border-color: rgba(255, 255, 255, 0.06);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.5);
+    --glass-bg: rgba(30, 41, 59, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.08);
+  }
 }
 
+/* ====== Dark Mode (Manual Toggle - .dark class) ====== */
+html.dark {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: rgba(30, 41, 59, 0.8);
+  --bg-glass: rgba(30, 41, 59, 0.6);
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+  --border-color: rgba(255, 255, 255, 0.06);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.5);
+  --glass-bg: rgba(30, 41, 59, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+/* If user explicitly prefers light, we keep light variables */
+html.light {
+  /* Keep the default light variables, nothing to override */
+}
+
+/* ====== Reset & Base ====== */
+* { margin:0; padding:0; box-sizing:border-box; }
 body {
-  font-family: "Inter", sans-serif;
-  background: #fcfcfd;
-  color: #0f172a;
-  overflow-x: hidden;
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background 0.3s, color 0.3s;
+  line-height: 1.6;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; display: block; }
+
+/* ====== Container ====== */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* ====== Animations ====== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeInUp 0.5s ease forwards; }
+
+/* ====== Buttons ====== */
+.btn-primary {
+  display: inline-block; padding: 14px 36px;
+  background: var(--gradient-primary);
+  color: white; border: none; border-radius: 12px;
+  font-weight: 600; font-size: 16px; cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
+}
+.btn-secondary {
+  display: inline-block; padding: 14px 36px;
+  background: transparent;
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  font-weight: 600; font-size: 16px; cursor: pointer;
+  transition: all 0.3s ease;
+}
+.btn-secondary:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  transform: translateY(-2px);
 }
 
-a {
-  text-decoration: none;
-  color: inherit;
-}
-
-button {
-  font-family: inherit;
-}
-
-img {
-  max-width: 100%;
-  display: block;
-}
-body{
-    margin:0;
-    transition:0.4s;
-    background:#fcfcfd;
-    color:#0f172a;
-}
-
-body.dark-theme{
-    background:#0f172a;
-    color:white;
-}
-
-/* Hero */
-
-body.dark-theme .hero{
-    background:#0f172a;
-}
-
-body.dark-theme .hero h1,
-body.dark-theme .hero h2,
-body.dark-theme .hero h3{
-    color:white;
-}
-
-body.dark-theme .description,
-body.dark-theme p,
-body.dark-theme small{
-    color:#cbd5e1;
-}
-
-body.dark-theme .dashboard{
-    background:#1e293b;
-}
-
-body.dark-theme .dashboard-card{
-    background:#334155;
-}
-
-body.dark-theme .floating-card{
-    background:#1e293b;
-}
-
-body.dark-theme .secondary-btn{
-    background:#1e293b;
-    color:white;
-    border:1px solid #475569;
-}
-
-body.dark-theme .note-card{
-    background:#1e293b;
-    color:white;
-}
-
-body.dark-theme input{
-    background:#334155;
-    color:white;
-    border:1px solid #475569;
-}
-
-body.dark-theme .login-card{
-    background:#1e293b;
-}
-
-body.dark-theme .navbar{
-    background:#111827;
+/* ====== Scrollbar ====== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  border-radius: 12px;
 }

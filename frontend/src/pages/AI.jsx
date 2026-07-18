@@ -1,9 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const API_KEY = 'AIzaSyChG5vYzsjJa1cgzRrVRG0GjpGeYclI37M';
-
-const genAI = new GoogleGenerativeAI(API_KEY);
+import './AI.css'; // We'll create this file
 
 function AI() {
   const [messages, setMessages] = useState([
@@ -12,9 +8,36 @@ function AI() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [currentConversationId, setCurrentConversationId] = useState(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(true);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Load conversations from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('ai_conversations');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setConversations(parsed);
+        if (parsed.length > 0) {
+          setCurrentConversationId(parsed[0].id);
+          setMessages(parsed[0].messages);
+        }
+      } catch (e) {
+        console.error('Failed to load conversations:', e);
+      }
+    }
+  }, []);
+
+  // Save conversations to localStorage whenever they change
+  useEffect(() => {
+    if (conversations.length > 0) {
+      localStorage.setItem('ai_conversations', JSON.stringify(conversations));
+    }
+  }, [conversations]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -24,37 +47,80 @@ function AI() {
     inputRef.current?.focus();
   }, []);
 
+  const saveCurrentConversation = () => {
+    if (messages.length > 1) {
+      const existingIndex = conversations.findIndex(c => c.id === currentConversationId);
+      const updatedConversation = {
+        id: currentConversationId || Date.now(),
+        title: messages[1]?.text?.slice(0, 30) + '...' || 'New Chat',
+        messages: messages,
+        timestamp: new Date().toISOString()
+      };
+
+      let updatedConversations;
+      if (existingIndex >= 0) {
+        updatedConversations = [...conversations];
+        updatedConversations[existingIndex] = updatedConversation;
+      } else {
+        updatedConversations = [updatedConversation, ...conversations];
+        setCurrentConversationId(updatedConversation.id);
+      }
+      setConversations(updatedConversations);
+    }
+  };
+
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
-    const userMessage = { id: Date.now(), text: input.trim(), sender: 'user' };
-    setMessages(prev => [...prev, userMessage]);
     const userText = input.trim();
+    const userMessage = { id: Date.now(), text: userText, sender: 'user' };
+    
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setLoading(true);
     setError(null);
 
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-      const history = messages
+      const conversationHistory = messages
         .filter(msg => msg.id !== 1)
         .map(msg => ({
           role: msg.sender === 'user' ? 'user' : 'model',
           parts: [{ text: msg.text }]
         }));
 
-      const chat = model.startChat({ history });
+      conversationHistory.push({
+        role: 'user',
+        parts: [{ text: userText }]
+      });
 
-      const result = await chat.sendMessage(userText);
-      const responseText = result.response.text();
+      const response = await fetch('http://localhost:8000/api/ai/chat/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ conversation: conversationHistory }),
+      });
 
-      setMessages(prev => [...prev, {
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Server error');
+      }
+
+      const aiMessage = {
         id: Date.now() + 1,
-        text: responseText,
+        text: data.reply,
         sender: 'ai'
-      }]);
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+      
+      // Save after getting response
+      setTimeout(() => {
+        saveCurrentConversation();
+      }, 100);
+
     } catch (err) {
       console.error(err);
       setError('Error: ' + (err.message || 'Failed to get response. Please try again.'));
@@ -63,52 +129,134 @@ function AI() {
     }
   };
 
+  const startNewConversation = () => {
+    if (messages.length > 1) {
+      saveCurrentConversation();
+    }
+    const newId = Date.now();
+    setCurrentConversationId(newId);
+    setMessages([{ id: 1, text: "Hello! I'm your AI Assistant. How can I help you today?", sender: 'ai' }]);
+    setError(null);
+  };
+
+  const loadConversation = (id) => {
+    const conv = conversations.find(c => c.id === id);
+    if (conv) {
+      setCurrentConversationId(id);
+      setMessages(conv.messages);
+    }
+  };
+
+  const deleteConversation = (id, e) => {
+    e.stopPropagation();
+    const updated = conversations.filter(c => c.id !== id);
+    setConversations(updated);
+    if (currentConversationId === id) {
+      if (updated.length > 0) {
+        setCurrentConversationId(updated[0].id);
+        setMessages(updated[0].messages);
+      } else {
+        startNewConversation();
+      }
+    }
+    localStorage.setItem('ai_conversations', JSON.stringify(updated));
+  };
+
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', padding: '20px', borderRadius: '12px', color: 'white', textAlign: 'center', marginBottom: '20px' }}>
-        <h1>🤖 AI Assistant</h1>
-        <p>Powered by Google Gemini 1.5 Flash</p>
+    <div className="ai-container">
+      {/* Sidebar - History */}
+      <div className={`ai-sidebar ${isHistoryOpen ? 'open' : 'closed'}`}>
+        <div className="sidebar-header">
+          <button className="new-chat-btn" onClick={startNewConversation}>
+            ✨ New Chat
+          </button>
+          <button className="toggle-sidebar-btn" onClick={() => setIsHistoryOpen(!isHistoryOpen)}>
+            {isHistoryOpen ? '◀' : '▶'}
+          </button>
+        </div>
+        <div className="conversation-list">
+          {conversations.length === 0 ? (
+            <div className="empty-history">No conversations yet</div>
+          ) : (
+            conversations.map(conv => (
+              <div
+                key={conv.id}
+                className={`conversation-item ${currentConversationId === conv.id ? 'active' : ''}`}
+                onClick={() => loadConversation(conv.id)}
+              >
+                <span className="conv-title">{conv.title}</span>
+                <button 
+                  className="delete-conv-btn"
+                  onClick={(e) => deleteConversation(conv.id, e)}
+                >
+                  ✕
+                </button>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#f8fafc', borderRadius: '12px', marginBottom: '20px' }}>
-        {messages.map(msg => (
-          <div key={msg.id} style={{ display: 'flex', justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start', marginBottom: '12px' }}>
-            <div style={{
-              maxWidth: '75%',
-              padding: '14px 18px',
-              borderRadius: '20px',
-              background: msg.sender === 'user' ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#ffffff',
-              color: msg.sender === 'user' ? 'white' : '#1f2937',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-            }}>
-              {msg.text}
-            </div>
+      {/* Main Chat Area */}
+      <div className="chat-main">
+        <div className="chat-header">
+          <div className="header-left">
+            {!isHistoryOpen && (
+              <button className="toggle-sidebar-btn" onClick={() => setIsHistoryOpen(true)}>
+                ☰
+              </button>
+            )}
+            <h2>💬 AI Assistant</h2>
           </div>
-        ))}
-        {loading && <div style={{ padding: '14px 18px', background: '#fff', borderRadius: '20px', width: 'fit-content' }}>🤖 Thinking...</div>}
-        <div ref={messagesEndRef} />
+          <div className="header-right">
+            <span className="status-dot"></span>
+            <span className="status-text">Online</span>
+          </div>
+        </div>
+
+        <div className="messages-container">
+          {messages.map(msg => (
+            <div key={msg.id} className={`message ${msg.sender}`}>
+              <div className="message-avatar">
+                {msg.sender === 'user' ? '👤' : '🤖'}
+              </div>
+              <div className="message-bubble">
+                {msg.text}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="message ai">
+              <div className="message-avatar">🤖</div>
+              <div className="message-bubble loading-dots">
+                <span>.</span><span>.</span><span>.</span>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {error && <div className="error-message">{error}</div>}
+
+        <form onSubmit={handleSend} className="input-form">
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder="Type your message..."
+            disabled={loading}
+            className="chat-input"
+          />
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="send-button"
+          >
+            {loading ? '⏳' : '✈️'}
+          </button>
+        </form>
       </div>
-
-      {error && <div style={{ background: '#fee2e2', color: '#ef4444', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>{error}</div>}
-
-      <form onSubmit={handleSend} style={{ display: 'flex', gap: '10px' }}>
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Type your message..."
-          disabled={loading}
-          style={{ flex: 1, padding: '16px', borderRadius: '9999px', border: '2px solid #e2e8f0', fontSize: '16px', outline: 'none' }}
-        />
-        <button
-          type="submit"
-          disabled={loading || !input.trim()}
-          style={{ padding: '0 32px', borderRadius: '9999px', background: loading || !input.trim() ? '#94a3b8' : 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', border: 'none', cursor: 'pointer' }}
-        >
-          {loading ? 'Sending...' : 'Send ✨'}
-        </button>
-      </form>
     </div>
   );
 }

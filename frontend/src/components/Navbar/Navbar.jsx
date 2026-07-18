@@ -1,85 +1,65 @@
-import ThemeToggle from "../ThemeToggle/ThemeToggle";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { useNotifications } from "../../context/NotificationContext";
-import "./Navbar.css";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
+import ThemeToggle from '../ThemeToggle/ThemeToggle';
+import { FaHome, FaBook, FaRobot, FaFileAlt, FaBell, FaSignOutAlt, FaSignInAlt, FaBars, FaTimes } from 'react-icons/fa';
+import './Navbar.css';
 
-function Navbar() {
+const Navbar = () => {
   const { user, logout } = useAuth();
-  const { unreadCount, markAllAsRead } = useNotifications();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
-    navigate("/");
+    navigate('/login');
   };
 
-  // Handle notification link click - mark all as read
-  const handleNotificationClick = () => {
-    if (unreadCount > 0) {
-      markAllAsRead();
-    }
-  };
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
     <nav className="navbar">
+      <div className="container navbar-container">
+        <Link to="/" className="navbar-brand">
+          <span className="brand-gradient">StudyVault</span>
+        </Link>
 
-      <div className="logo">
-        <Link to="/">📚 StudyVault</Link>
-      </div>
+        <button className="mobile-menu-btn" onClick={toggleMenu}>
+          {isMenuOpen ? <FaTimes /> : <FaBars />}
+        </button>
 
-      <ul className="nav-links">
-        <li>
-          <Link to="/">Home</Link>
-        </li>
+        <div className={`navbar-links ${isMenuOpen ? 'active' : ''}`}>
+          <Link to="/" onClick={toggleMenu}><FaHome /> Home</Link>
+          <Link to="/notes" onClick={toggleMenu}><FaBook /> Notes</Link>
+          <Link to="/ai" onClick={toggleMenu}><FaRobot /> AI</Link>
+          <Link to="/pyqs" onClick={toggleMenu}><FaFileAlt /> PYQs</Link>
 
-        <li>
-          <Link to="/notes">Notes</Link>
-        </li>
-
-        <li>
-          <Link to="/ai">AI Assistant</Link>
-        </li>
-
-        <li>
-          <Link to="/pyqs">PYQs</Link>
-        </li>
-
-        <li className="notification-nav-item">
-          <Link 
-            to="/contact" 
-            className="notification-link"
-            onClick={handleNotificationClick}
-          >
-            🔔 Notification
-            {unreadCount > 0 && (
-              <span className="notification-badge">{unreadCount}</span>
+          <div className="navbar-actions">
+            {user ? (
+              <>
+                <Link to="/contact" className="notification-bell" onClick={toggleMenu}>
+                  <FaBell />
+                  {unreadCount > 0 && (
+                    <span className="notification-badge">{unreadCount}</span>
+                  )}
+                </Link>
+                <button onClick={handleLogout} className="logout-btn">
+                  <FaSignOutAlt /> Logout
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className="login-btn" onClick={toggleMenu}>
+                <FaSignInAlt /> Login
+              </Link>
             )}
-          </Link>
-        </li>
-      </ul>
-
-      {/* Theme Toggle */}
-      <ThemeToggle />
-
-      {/* Auth Section */}
-      <div className="auth-section">
-        {user ? (
-          <div className="user-menu">
-            <span className="user-name">👤 {user.username}</span>
-            <button onClick={handleLogout} className="logout-btn">
-              Logout
-            </button>
+            <ThemeToggle />
           </div>
-        ) : (
-          <Link to="/login" className="cta-btn">
-            Get Started
-          </Link>
-        )}
+        </div>
       </div>
-
     </nav>
   );
-}
+};
 
 export default Navbar;

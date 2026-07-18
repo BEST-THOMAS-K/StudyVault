@@ -1,21 +1,38 @@
-.cta{
-    padding:100px 8%;
-    text-align:center;
-    background:#0f172a;
-    color:white;
+.cta {
+  padding: 80px 0;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
-.cta button{
-    margin-top:25px;
-    padding:15px 40px;
-    border:none;
-    border-radius:12px;
-    background:#10b981;
-    color:white;
-    font-size:1rem;
-    cursor:pointer;
+.cta-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
 }
 
-.cta button:hover{
-    background:#059669;
+.cta-text h2 {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.cta-text p {
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+
+.cta-btn {
+  flex-shrink: 0;
+  padding: 16px 48px;
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .cta-content {
+    flex-direction: column;
+    text-align: center;
+  }
 }

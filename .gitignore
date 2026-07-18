@@ -93,3 +93,6 @@ frontend/build/
 # =========================
 Thumbs.db
 Desktop.ini
+
+.env
+*.env

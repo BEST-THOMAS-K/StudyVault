@@ -1,5 +1,5 @@
 import Hero from "../components/Hero/Hero";
-import Stats from "../components/Stats/Stats";
+// import Stats from "../components/Stats/Stats";  // ← COMMENT OR DELETE THIS
 import Features from "../components/Features/Features";
 import HowItWorks from "../components/HowItWorks/HowItWorks";
 import Testimonials from "../components/Testimonials/Testimonials";
@@ -13,7 +13,6 @@ function Home() {
 
   return (
     <>
-      {/* Home Notification Banner */}
       {unreadCount > 0 && (
         <div className="home-notification-banner">
           <div className="banner-content">
@@ -21,9 +20,7 @@ function Home() {
             <span className="banner-text">
               You have <strong>{unreadCount}</strong> new notification{unreadCount > 1 ? 's' : ''}!
             </span>
-            <a href="/contact" className="banner-link">
-              View All → 
-            </a>
+            <a href="/contact" className="banner-link">View All →</a>
             <button 
               className="banner-close"
               onClick={(e) => {
@@ -36,7 +33,7 @@ function Home() {
         </div>
       )}
       <Hero />
-      <Stats />
+      {/* <Stats />  ← COMMENT OR DELETE THIS LINE */}
       <Features />
       <HowItWorks />
       <Testimonials />

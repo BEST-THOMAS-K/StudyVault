@@ -1,159 +1,38 @@
-import "./Hero.css";
-import { useNavigate } from "react-router-dom";
+import React from 'react';
+import './Hero.css';
 
-function Hero() {
-  const navigate = useNavigate();
-
+const Hero = () => {
   return (
     <section className="hero">
-      {/* Left Side */}
-      <div className="hero-text">
-        <span className="tagline">
-          ✨ AI Powered Learning Platform
-        </span>
-
-        <h1>
-          Study Smarter.
-          <br />
-          Learn Faster.
-        </h1>
-
-        <p className="description">
-          StudyVault is your all-in-one academic platform designed for students.
-          Access quality notes, previous year question papers, AI-powered
-          summaries, collaborate with classmates, and organize your academic
-          journey from one modern workspace.
-        </p>
-
-        <div className="hero-buttons">
-          <button
-            className="primary-btn"
-            onClick={() => navigate("/login")}
-          >
-            Get Started
-          </button>
-
-          <button
-            className="secondary-btn"
-            onClick={() => navigate("/notes")}
-          >
-            Explore Notes
-          </button>
-        </div>
-      </div>
-
-      {/* Right Side */}
-      <div className="hero-image">
-        <div className="dashboard">
-          <div className="dashboard-header">
-            <h2>StudyVault</h2>
-
-            <div className="profile">
-              <span className="online"></span>
-              Online
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div
-            className="dashboard-card"
-            onClick={() => navigate("/notes")}
-            style={{ cursor: "pointer" }}
-          >
-            <div>
-              <h3>📚 My Notes</h3>
-              <p>245 Notes Available</p>
-            </div>
-
-            <span className="badge green">Open</span>
-          </div>
-
-          {/* AI */}
-          <div
-            className="dashboard-card"
-            onClick={() => navigate("/ai")}
-            style={{ cursor: "pointer" }}
-          >
-            <div>
-              <h3>🤖 AI Assistant</h3>
-              <p>Generate summaries instantly</p>
-            </div>
-
-            <span className="badge blue">Launch</span>
-          </div>
-
-          {/* PYQs */}
-          <div
-            className="dashboard-card"
-            onClick={() => navigate("/pyqs")}
-            style={{ cursor: "pointer" }}
-          >
-            <div>
-              <h3>📄 Previous Year Papers</h3>
-              <p>1200+ Solved Question Papers</p>
-            </div>
-
-            <span className="badge orange">Browse</span>
-          </div>
-
-          {/* Team */}
-          <div
-            className="dashboard-card"
-            onClick={() => navigate("/team")}
-            style={{ cursor: "pointer" }}
-          >
-            <div>
-              <h3>👥 Team Workspace</h3>
-              <p>Collaborate with classmates</p>
-            </div>
-
-            <span className="badge purple">Open</span>
-          </div>
-
-          {/* Progress */}
-          <div className="progress-section">
-            <div className="progress-title">
-              <span>Weekly Progress</span>
-              <span>78%</span>
-            </div>
-
-            <div className="progress-bar">
-              <div className="progress-fill"></div>
-            </div>
+      <div className="hero-gradient"></div>
+      <div className="container hero-content">
+        <div className="hero-text">
+          <h1 className="hero-title">
+            Study Smarter.
+            <br />
+            <span className="gradient-text">Learn Faster.</span>
+          </h1>
+          <p className="hero-description">
+            StudyVault is your all-in-one academic platform. Access notes, 
+            previous year papers, AI-powered summaries, and collaborate 
+            with classmates – all in one modern workspace.
+          </p>
+          <div className="hero-buttons">
+            <button className="btn-primary">Get Started</button>
+            <button className="btn-secondary">Explore Notes</button>
           </div>
         </div>
-
-        {/* Floating Cards */}
-
-        <div
-          className="floating-card card1"
-          onClick={() => navigate("/notes")}
-          style={{ cursor: "pointer" }}
-        >
-          <h3>10K+</h3>
-          <p>Study Notes</p>
-        </div>
-
-        <div
-          className="floating-card card2"
-          onClick={() => navigate("/pyqs")}
-          style={{ cursor: "pointer" }}
-        >
-          <h3>1200+</h3>
-          <p>PYQs</p>
-        </div>
-
-        <div
-          className="floating-card card3"
-          onClick={() => navigate("/ai")}
-          style={{ cursor: "pointer" }}
-        >
-          <h3>AI</h3>
-          <p>Ask Anything</p>
+        <div className="hero-illustration">
+          <div className="illustration-grid">
+            <div className="icon-box box-1">📚</div>
+            <div className="icon-box box-2">🤖</div>
+            <div className="icon-box box-3">📝</div>
+            <div className="icon-box box-4">👥</div>
+          </div>
         </div>
       </div>
     </section>
   );
-}
+};
 
 export default Hero;

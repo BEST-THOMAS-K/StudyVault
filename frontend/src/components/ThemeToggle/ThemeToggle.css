@@ -1,41 +1,20 @@
-.theme-toggle{
-    position:fixed;
-    top:20px;
-    right:25px;
-    width:72px;
-    height:38px;
-    background:linear-gradient(135deg,#60a5fa,#2563eb);
-    border:none;
-    border-radius:50px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    padding:4px;
-    transition:.4s;
-    z-index:9999;
-    box-shadow:0 8px 20px rgba(0,0,0,.2);
+.theme-toggle {
+  background: none;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: var(--bg-glass);
+  backdrop-filter: blur(4px);
 }
 
-.toggle-circle{
-    width:30px;
-    height:30px;
-    border-radius:50%;
-    background:white;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:17px;
-    transition:.4s;
-}
-
-.theme-toggle.dark{
-    background:linear-gradient(135deg,#111827,#334155);
-}
-
-.theme-toggle.dark .toggle-circle{
-    transform:translateX(34px) rotate(360deg);
-}
-
-.theme-toggle:hover{
-    transform:scale(1.05);
+.theme-toggle:hover {
+  transform: rotate(20deg);
+  border-color: #3b82f6;
 }
