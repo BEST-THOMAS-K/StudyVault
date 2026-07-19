@@ -1,191 +1,129 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { User, Mail, Lock, Eye, EyeOff, BookMarked } from "lucide-react";
-import { FcGoogle } from "react-icons/fc";
-import { FaGithub } from "react-icons/fa";
+import { useNavigate, Link } from "react-router-dom";
+import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import "./Login.css";
 
-function Login() {
-  const navigate = useNavigate();
-  const { login, register } = useAuth();
-
-  const [isLogin, setIsLogin] = useState(true);
+const Login = () => {
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (loading) return;
-
     setError("");
     setLoading(true);
 
     try {
-      let result;
-
-      if (isLogin) {
-        result = await login(username, password);
-      } else {
-        result = await register(username, email, password);
-      }
-
+      const result = await login(username, password);
+      
       if (result.success) {
-        navigate("/notes");
+        navigate("/");
       } else {
-        setError(result.error || "Something went wrong. Please try again.");
+        setError(result.error || "Login failed. Please try again.");
       }
+    } catch (err) {
+      setError(err.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleMode = () => {
-    setIsLogin((prev) => !prev);
-    setError("");
-    setUsername("");
-    setEmail("");
-    setPassword("");
-    setShowPassword(false);
-    setRemember(false);
-  };
-
   return (
     <div className="login-page">
+      <div className="login-background">
+        <div className="login-glow"></div>
+      </div>
+
       <div className="login-container">
-        <div className="login-logo" aria-hidden="true">
-          <BookMarked size={30} strokeWidth={2} />
-        </div>
-        <h1 className="login-title">
-          {isLogin ? "Welcome Back" : "Create Account"}
-        </h1>
-        <p className="login-subtitle">
-          {isLogin
-            ? "Login to continue to StudyVault"
-            : "Sign up to start your learning journey"}
-        </p>
-
-        {error && <div className="login-error">{error}</div>}
-
-        <form className="login-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
-            <div className="input-wrap">
-              <User size={18} className="input-icon" aria-hidden="true" />
-              <input
-                id="username"
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
-                required
-              />
-            </div>
+        <div className="login-card">
+          <div className="login-header">
+            <h1>📚 StudyVault</h1>
+            <h2>Welcome Back</h2>
+            <p>Login to continue to your workspace</p>
           </div>
 
-          {!isLogin && (
+          {error && (
+            <div className="login-error">
+              <span className="error-icon">⚠️</span>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
-              <label htmlFor="email">Email address</label>
-              <div className="input-wrap">
-                <Mail size={18} className="input-icon" aria-hidden="true" />
+              <div className="input-wrapper">
+                <FaUser className="input-icon" />
                 <input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
+                  type="text"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
+                  className="login-input"
                 />
               </div>
             </div>
-          )}
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <div className="input-wrap">
-              <Lock size={18} className="input-icon" aria-hidden="true" />
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete={isLogin ? "current-password" : "new-password"}
-                minLength={4}
-                required
-              />
-              <button
-                type="button"
-                className="toggle-password"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+            <div className="form-group">
+              <div className="input-wrapper">
+                <FaLock className="input-icon" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="login-input"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
             </div>
-          </div>
 
-          {isLogin && (
             <div className="login-options">
-              <label>
+              <label className="checkbox-label">
                 <input
                   type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                 />
-                Remember me
+                <span>Remember me</span>
               </label>
-              <button type="button" className="forgot-password">
-                Forgot password?
-              </button>
+              {/* Removed Forgot Password – not needed */}
             </div>
-          )}
 
-          <button type="submit" className="login-btn" disabled={loading}>
-            {loading
-              ? isLogin
-                ? "Logging in..."
-                : "Creating account..."
-              : isLogin
-              ? "Login"
-              : "Create account"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="login-btn"
+            >
+              {loading ? "Logging in..." : "Login"}
+            </button>
+          </form>
 
-        <div className="login-divider">
-          <span>or continue with</span>
+          <div className="login-footer">
+            <p>
+              Don't have an account?{" "}
+              <Link to="/signup" className="signup-link">
+                Sign Up
+              </Link>
+            </p>
+          </div>
         </div>
-
-        <div className="social-login">
-          <button type="button" className="social-btn" disabled>
-            <FcGoogle size={18} />
-            Continue with Google
-          </button>
-          <button type="button" className="social-btn" disabled>
-            <FaGithub size={18} />
-            Continue with GitHub
-          </button>
-        </div>
-
-        <p className="signup-text">
-          {isLogin
-            ? "Don't have an account? "
-            : "Already have an account? "}
-          <button type="button" className="link-button" onClick={toggleMode}>
-            {isLogin ? "Sign Up" : "Login"}
-          </button>
-        </p>
       </div>
     </div>
   );
-}
+};
 
 export default Login;

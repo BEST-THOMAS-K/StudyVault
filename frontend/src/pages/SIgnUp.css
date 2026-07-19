@@ -1,4 +1,4 @@
-.login-page {
+.signup-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -9,36 +9,36 @@
   overflow: hidden;
 }
 
-.login-background {
+.signup-background {
   position: absolute;
   inset: 0;
   z-index: 0;
 }
 
-.login-glow {
+.signup-glow {
   position: absolute;
   top: -20%;
-  left: -10%;
+  right: -10%;
   width: 60%;
   height: 80%;
   background: radial-gradient(circle, rgba(6, 182, 212, 0.12), transparent 70%);
   border-radius: 50%;
-  animation: floatGlow 8s ease-in-out infinite;
+  animation: floatGlow 8s ease-in-out infinite 1s;
 }
 
 @keyframes floatGlow {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(30px, -20px) scale(1.1); }
+  50% { transform: translate(-30px, -20px) scale(1.1); }
 }
 
-.login-container {
+.signup-container {
   position: relative;
   z-index: 1;
   width: 100%;
   max-width: 420px;
 }
 
-.login-card {
+.signup-card {
   background: var(--bg-card);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -49,12 +49,12 @@
   transition: all 0.3s ease;
 }
 
-.login-header {
+.signup-header {
   text-align: center;
   margin-bottom: 32px;
 }
 
-.login-header h1 {
+.signup-header h1 {
   font-size: 28px;
   font-weight: 800;
   background: var(--gradient-primary);
@@ -64,19 +64,19 @@
   margin-bottom: 8px;
 }
 
-.login-header h2 {
+.signup-header h2 {
   font-size: 24px;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 4px;
 }
 
-.login-header p {
+.signup-header p {
   color: var(--text-secondary);
   font-size: 15px;
 }
 
-.login-error {
+.signup-error {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
   color: #ef4444;
@@ -89,18 +89,10 @@
   font-size: 14px;
 }
 
-.error-icon {
-  font-size: 18px;
-}
-
-.login-form {
+.signup-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.form-group {
-  position: relative;
 }
 
 .input-wrapper {
@@ -125,7 +117,7 @@
   font-size: 16px;
 }
 
-.login-input {
+.signup-input {
   flex: 1;
   padding: 14px 14px 14px 44px;
   border: none;
@@ -136,7 +128,7 @@
   font-family: var(--font-sans);
 }
 
-.login-input::placeholder {
+.signup-input::placeholder {
   color: var(--text-muted);
 }
 
@@ -149,47 +141,13 @@
   cursor: pointer;
   font-size: 18px;
   padding: 4px;
-  transition: color 0.2s;
 }
 
 .password-toggle:hover {
   color: var(--text-primary);
 }
 
-.login-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: #3b82f6;
-  cursor: pointer;
-}
-
-.forgot-link {
-  color: #3b82f6;
-  font-weight: 500;
-  transition: color 0.2s;
-}
-
-.forgot-link:hover {
-  color: #2563eb;
-  text-decoration: underline;
-}
-
-.login-btn {
+.signup-btn {
   padding: 14px;
   background: var(--gradient-primary);
   color: white;
@@ -201,37 +159,49 @@
   transition: all 0.3s ease;
   box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
   margin-top: 8px;
-  font-family: var(--font-sans);
 }
 
-.login-btn:hover:not(:disabled) {
+.signup-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
 }
 
-.login-btn:disabled {
+.signup-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
 }
 
-/* ====== Responsive ====== */
+.signup-footer {
+  margin-top: 24px;
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+.login-link {
+  color: #3b82f6;
+  font-weight: 600;
+  transition: color 0.2s;
+  text-decoration: none;
+}
+
+.login-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* Responsive */
 @media (max-width: 480px) {
-  .login-card {
+  .signup-card {
     padding: 32px 24px;
   }
-  
-  .login-header h1 {
+  .signup-header h1 {
     font-size: 24px;
   }
-  
-  .login-header h2 {
+  .signup-header h2 {
     font-size: 20px;
-  }
-  
-  .login-options {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
   }
 }
